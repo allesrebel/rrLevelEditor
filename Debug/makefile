@@ -8,9 +8,7 @@ RM := rm -rf
 
 # All of the sources participating in the build are defined here
 -include sources.mk
--include src/test/windowResizing/subdir.mk
--include src/test/gameSaves/subdir.mk
--include src/test/alphaBlending/subdir.mk
+-include src/main/Editor/subdir.mk
 -include src/main/subdir.mk
 -include subdir.mk
 -include objects.mk
@@ -41,19 +39,19 @@ endif
 # Add inputs and outputs from these tool invocations to the build variables 
 
 # All Target
-all: SDLGameEngine
+all: rrLevelEditor
 
 # Tool invocations
-SDLGameEngine: $(OBJS) $(USER_OBJS)
+rrLevelEditor: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: GCC C++ Linker'
-	g++  -o "SDLGameEngine" $(OBJS) $(USER_OBJS) $(LIBS)
+	g++  -o "rrLevelEditor" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
 # Other Targets
 clean:
-	-$(RM) $(OBJS)$(C++_DEPS)$(C_DEPS)$(CC_DEPS)$(CPP_DEPS)$(EXECUTABLES)$(CXX_DEPS)$(C_UPPER_DEPS) SDLGameEngine
+	-$(RM) $(OBJS)$(C++_DEPS)$(C_DEPS)$(CC_DEPS)$(CPP_DEPS)$(EXECUTABLES)$(CXX_DEPS)$(C_UPPER_DEPS) rrLevelEditor
 	-@echo ' '
 
 .PHONY: all clean dependents

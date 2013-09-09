@@ -11,8 +11,8 @@
 #include "Figure.h"
 #include "MouseFigure.h"
 #include "Editor/Editor.h"
-#include <SDL/SDL.h>
-#include <SDL/SDL_image.h>
+#include "SDL/SDL.h"
+#include "SDL/SDL_image.h"
 
 using namespace std;
 
@@ -40,7 +40,7 @@ int main(int argc, char* argv[]) {
 		//Load background and level defaults
 		Editor edit;
 
-		edit.setFile("default", Editor::read);
+		edit.setFile("resources/default", Editor::read);
 		edit.readHeader();
 
 		Header windowProperties = *edit.headerInfo;
@@ -83,7 +83,7 @@ int main(int argc, char* argv[]) {
 		vector<Figure*>* collisions = NULL;
 
 		//load level
-		Editor loadLevel("level.txt",Editor::read);
+		Editor loadLevel("resources/level.txt",Editor::read);
 
 		//for reading level
 		collisions = loadLevel.decode();
