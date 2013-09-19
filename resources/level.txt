@@ -1,3 +1,15 @@
 1191 670 900 550
 images/bgnd.jpg
 resources/tristam.mp3
+143 121 1191 670 0 4 3 1
+images/grab.png
+892 475 1191 670 0 4 3 1
+images/grab.png
+712 8 1191 670 0 4 3 1
+images/grab.png
+472 351 1191 670 0 4 1 1
+images/coin.png
+610 343 1191 670 0 0 0 1
+images/rectangle.png
+614 123 1191 670 0 4 1 1
+images/coin.png
