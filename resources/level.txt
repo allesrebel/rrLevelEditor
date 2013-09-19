@@ -1,3 +1,21 @@
 1191 670 900 550
 images/bgnd.jpg
 resources/tristam.mp3
+796 387 1191 670 0 0 0 1
+images/rectangle.png
+710 16 1191 670 0 4 3 1
+images/grab.png
+401 522 1191 670 0 4 1 1
+images/coin.png
+546 536 1191 670 0 4 1 1
+images/coin.png
+658 514 1191 670 0 4 1 1
+images/coin.png
+262 293 1191 670 0 4 1 1
+images/coin.png
+203 135 1191 670 0 0 0 1
+images/rectangle.png
+105 131 1191 670 0 0 0 1
+images/rectangle.png
+982 229 1191 670 0 0 0 1
+images/rectangle.png
