@@ -5,128 +5,227 @@
 // Copyright   :
 // Description : SDL Scrolling Test
 //============================================================================
+
 #include <iostream>
+#include <vector>
 #include "SDLAbstractionLayer.h"
-#include "Exception.h"
-#include "Figure.h"
-#include "RectBoundaryFigure.h"
-#include "CircBoundaryFigure.h"
-#include "TempFigure.h"
-#include "PlayerFigure.h"
-#include "MouseFigure.h"
-#include "GrabbableFigure.h"
-#include <SDL/SDL.h>
-#include <SDL/SDL_image.h>
-#include <SDL/SDL_ttf.h>
-#include <SDL/SDL_mixer.h>
+#include "Objects.h"
 
 #include "Editor/Editor.h"
 
 using namespace std;
 
-const int FRAMERATE = 30;
+const bool EDIT = true;
+const bool PLAY = true;
 
-const bool OTHER_LEADER = false;
-const double OTHER_SPEED = 0;
-const double OTHER_GRAVITY = 0;
-const double OTHER_JUMPSTRENGTH = 0;
-const int OTHER_NUMCLIPS = 1;
-
-const string TTF_PATH = "fonts/lazy.ttf";
-const int FONT_SIZE = 28;
-const Surface::Color FONT_COLOR = Surface::BLACK;
+// TODO integrate A* algorithm in here. When Player grabs a GrabbableFigure and arm must
+// be drawn from the Player to the GrabbableFigure object along the "shortest" path
 
 /*
  * Description: This client simply tests the API and its capabilities of creating a
- * simple 2d scrolling platform game. This will serve as an example for now.
+ * simple 2d scrolling platform game. This will serve as an example reference for now.
  */
 int main(int argc, char* argv[]) {
 
-	//editor test
-	Editor* editor = new Editor;
-	editor->setFile("resources/level.txt", Editor::read);
-	Header* info = NULL;
-	info = editor->readHeader();
+   // editing the level
+   if (EDIT) {
+      // Setup
+      // ----------------------------------------------------------------------------
+      // declare basic event loop variables
+      bool quit = false;   // boolean quit to exit out of event loop
+      SDL_Event event;     // SLD_Event event to receive inputs
+      Timer timer;         // timer to make movement framerate independent
 
-	//initialize screen, video mode, SDL, ttf, audio, etc.
-	SDL_Surface* screen = init(info->screen_w, info->screen_h, "SDL Scrolling");
+      // set up editor and the file (containing the figures and their positions) to
+      // read from. Use Header object to read header information of level.txt
+      Editor* editor = new Editor;
+      editor->setFile("resources/level.txt", Editor::read);
+      Header* info = editor->readHeader();
 
-	//initialize all images
-	Surface bgnd(info->bg_path.c_str());
-	Surface dot("images/dot.png", Surface::CYAN);
+      // initialize screen, video mode, SDL, ttf, audio, etc.
+      SDL_Surface* screen = init(info->screen_w, info->screen_h,
+            "SDL Scrolling");
 
-	//collision vector - contains all the Figures (pointers to Figures) that
-	//must be taken into account in regards to collision detection
-	vector<Figure*>* collisions = NULL;
+      // instantiate any images needed
+      Surface bgnd(info->bg_path.c_str());            // grabbed from level.txt
+      Surface dot("images/dot.png", Surface::CYAN); // dot will be our invisible collision circle
 
-	printf("Starting mousefig...");
-	MouseFigure mouseFig(0, 0, &dot, SDL_GetVideoSurface(), info->bg_w,
-			info->bg_h, 1);
-	mouseFig.setHeader(info);
-	printf("done!\n");
+      // collision vector - contains all the Figures (pointers to Figures) that
+      // must be taken into account in regards to collision detection with the player
+      vector<Figure*>* collisions = editor->decode();
 
-	//Prepare music to be played within level
-	Music m("resources/tristam.mp3");
+      // set up a MouseFigure object which will be your "hand" that places and removes
+      // objects on the screen
+      printf("Starting mousefig...");
+      MouseFigure mouseFig(0, 0, &dot, screen, info->bg_w, info->bg_h, 1);
+      mouseFig.setHeader(info);
+      mouseFig.setContainer(collisions);
+      printf("done!\n");
 
-	collisions = editor->decode();
-	mouseFig.setContainer(collisions);
+      // close the file connection
+      editor->closeFile();
 
-	//Prepare bool quit variable, SDL_Event event, and Timer timer. All of these
-	//variables will be used in the event loop
-	bool quit = false;
-	SDL_Event event;
-	Timer timer;
-	timer.start();
+      // Body
+      // ----------------------------------------------------------------------------
+      // start the timer and begin the event loop
+      timer.start();
 
-	//Start music and set volume
-	if (Mix_PlayingMusic() == 0) if (Mix_PlayMusic(m.getMix_Music(), -1) < 0) throw SoundException();
+      while (!quit) {
+         if (SDL_PollEvent(&event)) {
+            if (event.type == SDL_QUIT)
+               quit = true;
 
-	Mix_VolumeMusic(32); //0 to 128
+            // receive input for Player Figure
+            mouseFig.handleInput(event);
+         }
 
-	editor->closeFile();
+         //check for container mismatch (due to loading errors)
+         if (collisions != mouseFig.container)
+            collisions = mouseFig.container; //assume that mouse Fig's copy is right
 
-	//Start event loop
-	while (!quit) {
-		if (SDL_PollEvent(&event)) {
-			if (event.type == SDL_QUIT) quit = true;
+         // Move player to new position
+         mouseFig.move(*collisions, timer.getTicks());
 
-			//receive input for Player Figure
-			mouseFig.handleInput(event);
-		}
+         // restart timer since movement is time-based and independent of framerate
+         timer.start();
 
-		//check for container mismatch (due to loading errors)
-		if(collisions != mouseFig.container){
-			//assume that mouse Fig's copy is right
-			collisions = mouseFig.container;
-		}
+         // blit background image to screen with respect to the camera following Player Figure
+         applySurface(0, 0, bgnd, screen, mouseFig.getCameraClip());
 
-		// Move player to new position
-		mouseFig.move(*collisions, timer.getTicks());
+         // draw all figures but temp Figs and player
+         for (unsigned int i = 0; i < collisions->size(); i++) {
+            (*collisions)[i]->show(mouseFig.getCameraClip());
+         }
 
-		//restart timer since movement is time-based and independent of framerate
-		timer.start();
+         // draw the tempMouseFigure if there is one
+         if (mouseFig.tempObject != NULL)
+            mouseFig.tempObject->show(mouseFig.getCameraClip());
 
-		//blit background image to screen with respect to the camera following Player Figure
-		applySurface(0, 0, bgnd, screen, mouseFig.getCameraClip());
+         // update the screen by swapping video buffers
+         flip(screen);
+      }
 
-		//draw all figures but temp Figs and player
-		for (unsigned int i = 0; i < collisions->size(); i++) {
-			collisions->at(i)->show(mouseFig.getCameraClip());
-		}
+      // Teardown
+      // ----------------------------------------------------------------------------
+      // free allocated memory and teardown with cleanUp()
+      for (vector<Figure*>::iterator i = collisions->begin(), end =
+            collisions->end(); i != end; i++) {
+         delete *i;
+      }
+      delete collisions;
+      delete editor;
+      delete info;
+      cleanUp();
+   }
 
-		//draw the tempMouseFigure if there is one
-		if (mouseFig.tempObject != NULL) mouseFig.tempObject->show(
-				mouseFig.getCameraClip());
+   // play the level you created!
+   if (PLAY) {
+      // Setup
+      // ----------------------------------------------------------------------------
+      // declare variables for the speed, gravity, jump strength affecting the player.
+      // Declare variables specifying the number of clips existing on one row on the
+      // sprite sheet (assuming only two rows for left and right directions). Declare
+      // basic event loop variables - quit, event, timer.
+      double FS = 200;     // figure speed
+      double G = 4;        // gravity
+      double FJS = 3;      // figure jump strength
+      int FNC = 4;         // figure number of clips
 
-		//update the screen by swapping video buffers
-		flip(screen);
-	}
+      bool quit = false;   // boolean quit to exit out of event loop
+      SDL_Event event;     // SDL_Event to receive inputs
+      Timer timer;         // Timer to make movement framerate independent
 
-//stop music
-	Mix_HaltMusic();
+      // set up editor and the file (containing the figures and their positions) to
+      // read from. Use Header object to read header information of level.txt
+      Editor* editor = new Editor;
+      editor->setFile("resources/level.txt", Editor::read);
+      Header* info = editor->readHeader();
 
-//quit out of SDL, close audio, ttf, etc.
-	cleanUp();
+      // initialize screen, video mode, SDL, ttf, audio, etc.
+      SDL_Surface* screen = init(info->screen_w, info->screen_h,
+            "SDL Scrolling");
 
-	return 0;
+      // instantiate any images needed
+      Surface bgnd(info->bg_path.c_str());   // grabbed from level.txt
+      Surface foo("images/Cyan_Final.png", Surface::BLACK);
+
+      // collision vector - contains all the Figures (pointers to Figures) that
+      // must be taken into account in regards to collision detection with the player
+      vector<Figure*>* collisions = editor->decode();
+
+      // create a player you want to play as and push it to the collisions container
+      PlayerFigure *rf = new PlayerFigure(100, info->bg_w - foo.getSDL_Surface()->h / 2,
+            foo, screen, FS, G, FJS, FNC, info->bg_w, info->bg_h);
+      collisions->push_back(rf);
+
+      // start music and set volume
+      Music m("resources/tristam.mp3");
+      if (Mix_PlayingMusic() == 0) {
+         if (Mix_PlayMusic(m.getMix_Music(), -1) < 0)
+            throw SoundException();
+
+         Mix_VolumeMusic(32); //0 to 128
+      }
+
+      // close the file connection
+      editor->closeFile();
+
+      // Body
+      // ----------------------------------------------------------------------------
+      // start the timer and begin event loop
+      timer.start();
+
+      while (!quit) {
+         if (SDL_PollEvent(&event)) {
+            if (event.type == SDL_QUIT)
+               quit = true;
+
+            // receive input for Player Figure
+            rf->handleInput(event);
+         }
+
+         // move Player Figure to new position based on input given
+         rf->move(*collisions, timer.getTicks());
+
+         // restart timer since movement is time-based and independent of framerate
+         timer.start();
+
+         // blit background image to screen with respect to the camera following Player Figure
+         applySurface(0, 0, bgnd, screen, rf->getCameraClip());
+
+         // draw all figures but temp Figs and player
+         for (unsigned int i = 0; i < collisions->size(); i++) {
+            if (typeid(*(*collisions)[i]) == typeid(TempFigure)) {
+               TempFigure* t = static_cast<TempFigure*>((*collisions)[i]);
+               t->move(*collisions, 0);
+               t->show(rf->getCameraClip());
+            }
+            else
+               (*collisions)[i]->show(rf->getCameraClip());
+         }
+
+         // show the Player Figure
+         rf->show();
+
+         // update the screen by swapping video buffers
+         flip(screen);
+      }
+
+      // Teardown
+      // ----------------------------------------------------------------------------
+      // stop music
+      Mix_HaltMusic();
+
+      // free dynamically allocated data and use cleanUp()
+      for (vector<Figure*>::iterator i = collisions->begin(), end =
+            collisions->end(); i != end; i++) {
+         delete *i;
+      }
+      delete collisions;
+      delete editor;
+      delete info;
+      cleanUp();
+   }
+
+   return 0;
 }

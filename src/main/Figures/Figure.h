@@ -8,8 +8,8 @@
 #ifndef FIGURE_H_
 #define FIGURE_H_
 
-#include "SDLAbstractionLayer.h"
-#include "Exception.h"
+#include "../SDLAbstractionLayer.h"
+#include "../Exception.h"
 #include <typeinfo>
 #include <iostream>
 #include <cmath>
