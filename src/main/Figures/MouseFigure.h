@@ -10,18 +10,14 @@
 
 #include <SDL/SDL_events.h>
 #include <vector>
-
-#include "Editor/Editor.h"
 #include "Figure.h"
-
-//#include "GrabbableFigure.h"
-//#include "PlayerFigure.h"
-//#include "RectBoundaryFigure.h"
-//#include "TempFigure.h"
+#include "../Editor/Editor.h"
 
 class CircFigure;
 class RectFigure;
 class Surface;
+class Editor;
+struct Header;
 struct SDL_Surface;
 
 class MouseFigure: public Figure {

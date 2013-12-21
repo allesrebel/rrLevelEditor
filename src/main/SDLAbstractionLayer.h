@@ -5,8 +5,13 @@
 #include <SDL/SDL_ttf.h>
 #include <SDL/SDL_image.h>
 #include <SDL/SDL_mixer.h>
+#include "Exception.h"
 #include <string>
 #include <vector>
+#include <iostream>
+#include <string>
+#include <cmath>
+
 using namespace std;
 
 const bool DEBUG_PRIVATES = false;

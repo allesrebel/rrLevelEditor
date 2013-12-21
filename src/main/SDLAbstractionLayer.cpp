@@ -1,8 +1,5 @@
-#include "Exception.h"
+
 #include "SDLAbstractionLayer.h"
-#include <iostream>
-#include <string>
-#include <cmath>
 
 using namespace std;
 
